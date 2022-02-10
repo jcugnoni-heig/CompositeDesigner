@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MaterialDialog</class>
+ <widget class="QDialog" name="MaterialDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>553</width>
+    <height>360</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Material Properties</string>
+  </property>
+  <widget class="QDialogButtonBox" name="buttonBox">
+   <property name="geometry">
+    <rect>
+     <x>450</x>
+     <y>20</y>
+     <width>81</width>
+     <height>241</height>
+    </rect>
+   </property>
+   <property name="orientation">
+    <enum>Qt::Vertical</enum>
+   </property>
+   <property name="standardButtons">
+    <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+   </property>
+  </widget>
+  <widget class="QWidget" name="formLayoutWidget">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>40</y>
+     <width>191</width>
+     <height>285</height>
+    </rect>
+   </property>
+   <layout class="QFormLayout" name="formLayoutElastic">
+    <item row="0" column="0">
+     <widget class="QLabel" name="lblE1">
+      <property name="text">
+       <string>E1</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="1">
+     <widget class="QLineEdit" name="lineE1"/>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLabel" name="lblE2">
+      <property name="text">
+       <string>E2</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0">
+     <widget class="QLabel" name="lblE3">
+      <property name="text">
+       <string>E3</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="1">
+     <widget class="QLineEdit" name="lineE3"/>
+    </item>
+    <item row="3" column="0">
+     <widget class="QLabel" name="lblNU12">
+      <property name="text">
+       <string>NU12</string>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="0">
+     <widget class="QLabel" name="lblNU13">
+      <property name="text">
+       <string>NU13</string>
+      </property>
+     </widget>
+    </item>
+    <item row="5" column="0">
+     <widget class="QLabel" name="lblNU23">
+      <property name="text">
+       <string>NU23</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="1">
+     <widget class="QLineEdit" name="lineNU12"/>
+    </item>
+    <item row="4" column="1">
+     <widget class="QLineEdit" name="lineNU13"/>
+    </item>
+    <item row="5" column="1">
+     <widget class="QLineEdit" name="lineNU23"/>
+    </item>
+    <item row="6" column="0">
+     <widget class="QLabel" name="lblG12">
+      <property name="text">
+       <string>G12</string>
+      </property>
+     </widget>
+    </item>
+    <item row="7" column="0">
+     <widget class="QLabel" name="lblG13">
+      <property name="text">
+       <string>G13</string>
+      </property>
+     </widget>
+    </item>
+    <item row="8" column="0">
+     <widget class="QLabel" name="lblG23">
+      <property name="text">
+       <string>G23</string>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="1">
+     <widget class="QLineEdit" name="lineG12"/>
+    </item>
+    <item row="7" column="1">
+     <widget class="QLineEdit" name="lineG13"/>
+    </item>
+    <item row="8" column="1">
+     <widget class="QLineEdit" name="lineG23"/>
+    </item>
+    <item row="1" column="1">
+     <widget class="QLineEdit" name="lineE2"/>
+    </item>
+    <item row="9" column="0">
+     <widget class="QLabel" name="lblRHO">
+      <property name="text">
+       <string>RHO</string>
+      </property>
+     </widget>
+    </item>
+    <item row="9" column="1">
+     <widget class="QLineEdit" name="lineRHO"/>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QWidget" name="formLayoutWidget_2">
+   <property name="geometry">
+    <rect>
+     <x>250</x>
+     <y>40</y>
+     <width>160</width>
+     <height>256</height>
+    </rect>
+   </property>
+   <layout class="QFormLayout" name="formLayoutStrength">
+    <item row="0" column="0">
+     <widget class="QLabel" name="lblXT">
+      <property name="text">
+       <string>XT</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLabel" name="lblXC">
+      <property name="text">
+       <string>XC</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0">
+     <widget class="QLabel" name="lblYT">
+      <property name="text">
+       <string>YT</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="0">
+     <widget class="QLabel" name="lblYC">
+      <property name="text">
+       <string>YC</string>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="0">
+     <widget class="QLabel" name="lblS12">
+      <property name="text">
+       <string>S12</string>
+      </property>
+     </widget>
+    </item>
+    <item row="7" column="0">
+     <widget class="QLabel" name="lblS13">
+      <property name="text">
+       <string>S13</string>
+      </property>
+     </widget>
+    </item>
+    <item row="8" column="0">
+     <widget class="QLabel" name="lblS23">
+      <property name="text">
+       <string>S23</string>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="0">
+     <widget class="QLabel" name="lblZT">
+      <property name="text">
+       <string>ZT</string>
+      </property>
+     </widget>
+    </item>
+    <item row="5" column="0">
+     <widget class="QLabel" name="lblZC">
+      <property name="text">
+       <string>ZC</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="1">
+     <widget class="QLineEdit" name="lineXT"/>
+    </item>
+    <item row="1" column="1">
+     <widget class="QLineEdit" name="lineXC"/>
+    </item>
+    <item row="2" column="1">
+     <widget class="QLineEdit" name="lineYT"/>
+    </item>
+    <item row="3" column="1">
+     <widget class="QLineEdit" name="lineYC"/>
+    </item>
+    <item row="4" column="1">
+     <widget class="QLineEdit" name="lineZT"/>
+    </item>
+    <item row="5" column="1">
+     <widget class="QLineEdit" name="lineZC"/>
+    </item>
+    <item row="6" column="1">
+     <widget class="QLineEdit" name="lineS12"/>
+    </item>
+    <item row="7" column="1">
+     <widget class="QLineEdit" name="lineS13"/>
+    </item>
+    <item row="8" column="1">
+     <widget class="QLineEdit" name="lineS23"/>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QLabel" name="lblElasticProperties">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>20</y>
+     <width>111</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Elastic properties</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="lblStrengthProperties">
+   <property name="geometry">
+    <rect>
+     <x>250</x>
+     <y>20</y>
+     <width>131</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Strength properties</string>
+   </property>
+  </widget>
+ </widget>
+ <tabstops>
+  <tabstop>lineE1</tabstop>
+  <tabstop>lineE2</tabstop>
+  <tabstop>lineE3</tabstop>
+  <tabstop>lineNU12</tabstop>
+  <tabstop>lineNU13</tabstop>
+  <tabstop>lineNU23</tabstop>
+  <tabstop>lineG12</tabstop>
+  <tabstop>lineG13</tabstop>
+  <tabstop>lineG23</tabstop>
+  <tabstop>lineRHO</tabstop>
+  <tabstop>lineXT</tabstop>
+  <tabstop>lineXC</tabstop>
+  <tabstop>lineYT</tabstop>
+  <tabstop>lineYC</tabstop>
+  <tabstop>lineZT</tabstop>
+  <tabstop>lineZC</tabstop>
+  <tabstop>lineS12</tabstop>
+  <tabstop>lineS13</tabstop>
+  <tabstop>lineS23</tabstop>
+ </tabstops>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>MaterialDialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>450</x>
+     <y>254</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>157</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>MaterialDialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>476</x>
+     <y>260</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>286</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

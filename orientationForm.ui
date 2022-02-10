@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>OrientationDialog</class>
+ <widget class="QDialog" name="OrientationDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>545</width>
+    <height>155</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Orientation Properties</string>
+  </property>
+  <widget class="QDialogButtonBox" name="buttonBox">
+   <property name="geometry">
+    <rect>
+     <x>460</x>
+     <y>10</y>
+     <width>81</width>
+     <height>171</height>
+    </rect>
+   </property>
+   <property name="orientation">
+    <enum>Qt::Vertical</enum>
+   </property>
+   <property name="standardButtons">
+    <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_2">
+   <property name="geometry">
+    <rect>
+     <x>170</x>
+     <y>40</y>
+     <width>55</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Vref</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_4">
+   <property name="geometry">
+    <rect>
+     <x>170</x>
+     <y>70</y>
+     <width>55</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Vnorm</string>
+   </property>
+  </widget>
+  <widget class="QWidget" name="formLayoutWidget">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>40</y>
+     <width>127</width>
+     <height>101</height>
+    </rect>
+   </property>
+   <layout class="QFormLayout" name="formLayout">
+    <item row="1" column="0">
+     <widget class="QLabel" name="betaLabel">
+      <property name="text">
+       <string>beta</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1">
+     <widget class="QLineEdit" name="betaLineEdit"/>
+    </item>
+    <item row="0" column="0">
+     <widget class="QLabel" name="alphaLabel">
+      <property name="text">
+       <string>alpha</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="1">
+     <widget class="QLineEdit" name="alphaLineEdit"/>
+    </item>
+    <item row="2" column="0">
+     <widget class="QLabel" name="gammaLabel">
+      <property name="text">
+       <string>gamma</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="1">
+     <widget class="QLineEdit" name="gammaLineEdit"/>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QLineEdit" name="V1x">
+   <property name="geometry">
+    <rect>
+     <x>210</x>
+     <y>40</y>
+     <width>71</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="V1y">
+   <property name="geometry">
+    <rect>
+     <x>290</x>
+     <y>40</y>
+     <width>71</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="V1z">
+   <property name="geometry">
+    <rect>
+     <x>370</x>
+     <y>40</y>
+     <width>71</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="V3x">
+   <property name="geometry">
+    <rect>
+     <x>210</x>
+     <y>70</y>
+     <width>71</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="V3z">
+   <property name="geometry">
+    <rect>
+     <x>370</x>
+     <y>70</y>
+     <width>71</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="V3y">
+   <property name="geometry">
+    <rect>
+     <x>290</x>
+     <y>70</y>
+     <width>71</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="radioAngles">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>10</y>
+     <width>95</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Angles</string>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="radioVectors">
+   <property name="geometry">
+    <rect>
+     <x>170</x>
+     <y>10</y>
+     <width>95</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Vectors</string>
+   </property>
+  </widget>
+ </widget>
+ <tabstops>
+  <tabstop>radioAngles</tabstop>
+  <tabstop>radioVectors</tabstop>
+  <tabstop>alphaLineEdit</tabstop>
+  <tabstop>betaLineEdit</tabstop>
+  <tabstop>gammaLineEdit</tabstop>
+  <tabstop>V1x</tabstop>
+  <tabstop>V1y</tabstop>
+  <tabstop>V1z</tabstop>
+  <tabstop>V3x</tabstop>
+  <tabstop>V3y</tabstop>
+  <tabstop>V3z</tabstop>
+ </tabstops>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>OrientationDialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>248</x>
+     <y>254</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>157</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>OrientationDialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>316</x>
+     <y>260</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>286</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>
