@@ -508,7 +508,7 @@ class CompositeModel(QStandardItemModel):
         #   Here the criteria are linearized to facilitate calculation of the safety factor.
         #   with the linearized criterion formulation, the safety factor is simply 1/LinCriterion
         
-        # TODO implement post pro for solid regions (use MODI_REPERE for each solid region => evaluate stress => failure criteria)
+        # in progress: implement post pro for solid regions (use formula for stress rotation for each solid region  => failure criteria)
 
         name,ftype = QFileDialog.getSaveFileName(None, 'Export Code-Aster commands' ,'',"CA commands (*.comm);")
         file = open(name,'w')
@@ -516,7 +516,136 @@ class CompositeModel(QStandardItemModel):
         # POURSUITE (follow up on previous job)
         txt="POURSUITE()\n\n"
         file.write(txt)
-        
+
+        SolidPostProPythonDefs = """
+import numpy as np
+
+
+# PYTHON FUNCTIONS
+def rotmatrix(alpha,beta,gamma):
+    # Rotation matrix defined by yaw = alpha, pitch = beta, roll = gamma in degrees wrt global coord system
+    
+    # Rotation matrices
+    alpha=alpha/180.0*np.pi
+    
+    beta = beta/180.0*np.pi
+    
+    gamma=gamma/180.0*np.pi
+    
+    # Rotation matrices
+    R_z = np.array([
+        [np.cos(alpha), -np.sin(alpha), 0],
+        [np.sin(alpha), np.cos(alpha), 0],
+        [0, 0, 1]
+    ])
+
+    R_y = np.array([
+        [np.cos(beta), 0, np.sin(beta)],
+        [0, 1, 0],
+        [-np.sin(beta), 0, np.cos(beta)]
+    ])
+
+    R_x = np.array([
+        [1, 0, 0],
+        [0, np.cos(gamma), -np.sin(gamma)],
+        [0, np.sin(gamma), np.cos(gamma)]
+    ])
+
+    # Combined rotation matrix
+    R = R_x @ R_y @ R_z
+
+    return R
+
+
+def transform_stress(SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ, alpha, beta, gamma):
+    # transform stress components SIXX,.. to local coord system defined by yaw,pitch, roll angles (in degree) 
+    sigma_global = np.array([
+        [SIXX, SIXY, SIXZ],
+        [SIXY, SIYY, SIYZ],
+        [SIXZ, SIYZ, SIZZ]
+    ])
+    
+    R=rotmatrix(alpha,beta,gamma)
+
+    # Transform the stress tensor
+    sigma_local = R @ sigma_global @ R.T
+
+    # Extract the components
+    SI11 = sigma_local[0, 0]
+    SI22 = sigma_local[1, 1]
+    SI33 = sigma_local[2, 2]
+    SI12 = sigma_local[0, 1]
+    SI13 = sigma_local[0, 2]
+    SI23 = sigma_local[1, 2]
+
+    return SI11, SI22, SI33, SI12, SI13, SI23
+
+def LocalStress(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ,alpha=0,beta=0,gamma=0):
+    SI11, SI22, SI33, SI12, SI13, SI23 = transform_stress(SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ, alpha, beta, gamma)
+    return SI11, SI22, SI33, SI12, SI13, SI23
+
+def SI11(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=0,beta=0,gamma=0):
+    SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ = transform_stress(SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ, alpha, beta, gamma)
+    return SIXX
+
+def SI22(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=0,beta=0,gamma=0):
+    SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ = transform_stress(SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ, alpha, beta, gamma)
+    return SIYY
+
+def SI33(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=0,beta=0,gamma=0):
+    SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ = transform_stress(SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ, alpha, beta, gamma)
+    return SIZZ
+
+def SI12(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=0,beta=0,gamma=0):
+    SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ = transform_stress(SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ, alpha, beta, gamma)
+    return SIXY
+
+def SI13(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=0,beta=0,gamma=0):
+    SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ = transform_stress(SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ, alpha, beta, gamma)
+    return SIXZ
+
+def SI23(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=0,beta=0,gamma=0):
+    SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ = transform_stress(SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ, alpha, beta, gamma)
+    return SIYZ
+
+def FT(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=0,beta=0,gamma=0,XT=1,S12=1,S13=1):
+    #compute local failure criterion FT in solid region 
+    SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ = transform_stress(SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ, alpha, beta, gamma)
+    FT=(SIXX+abs(SIXX))/(2*abs(SIXX)) * sqrt( (SIXX / XT )**2 + ( SIXY / S12 )**2 + ( SIXZ / S13 )**2 ) 
+    return FT
+   
+def FC(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=0,beta=0,gamma=0, XC=1):
+    #compute local failure criterion FC in solid region 
+    SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ = transform_stress(SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ, alpha, beta, gamma)
+    FC=(abs(SIXX)-SIXX)/(2*abs(SIXX)) * sqrt( (SIXX / XC )**2  )  
+    return FC
+
+def MT(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=0,beta=0,gamma=0, YT=1, ZT=1, S12=1, S13=1, S23=1 ):
+    #compute local failure criterion MT in solid region 
+    SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ = transform_stress(SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ, alpha, beta, gamma)
+    MT=(abs(SIYY + SIZZ)+(SIYY+SIZZ))/(2*abs(SIYY+SIZZ)) * sqrt( ( (SIYY+SIZZ) / (0.5*(YT+ZT)) )**2 + (SIYZ**2-SIYY*SIZZ)/( ( S23 )**2 ) + (SIXY**2 + SIXZ**2)/ ( (0.5 * (S12+S13) )**2 )   )  
+    return MT
+
+def MC(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=0,beta=0,gamma=0, YC=1, ZC=1, S12=1, S13=1, S23=1):
+    #compute local failure criterion MC in solid region 
+    SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ = transform_stress(SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ, alpha, beta, gamma)
+    try:
+        ST=SIYY + SIZZ
+        negValue=(abs(ST)-(ST))/(2.0*abs(ST))
+        YZC=(0.5*(YC+ZC))
+        F1=abs(1.0 / YZC  * ( ( YZC / (2.0 * S23 ) )**2 - 1.0 ))
+        S1X= 0.5 * (S12+S13)
+        Crit=F1 * ST + ( ST / (2.0 * S23 ) )**2 + (SIYZ**2 - SIYY*SIZZ)/( ( S23 )**2 ) + (SIXY**2 + SIXZ**2)/( ( S1X )**2 )
+        MC=sqrt( abs(negValue * Crit) )
+    except:
+        MC=-1.0
+    return MC
+
+"""
+
+        #write python functions 
+        file.write(SolidPostProPythonDefs)
+
         # loop over each shell region
         shellFCresults=[]
         shellPlyresults=[]
@@ -623,7 +752,7 @@ class CompositeModel(QStandardItemModel):
                 #                      TYPE_CHAM='ELGA_NEUT_R')
                 txt="${name} = CALC_CHAMP(reuse=${name}, CHAM_UTIL=_F(FORMULE=( $FT , $FC , $MT , $MC ), NOM_CHAM='UT01_ELGA', NUME_CHAM_RESU=2), RESULTAT=${name})\n\n"
                 file.write(Template(txt).substitute(name=resultName,FT=resultName+'_FT',FC=resultName+'_FC',MT=resultName+'_MT',MC=resultName+'_MC'))
-                txt="${name} = CREA_CHAMP(NOM_CHAM='UT02_ELGA', OPERATION='EXTR', PROL_ZERO='OUI', RESULTAT=${resu}, TYPE_CHAM='ELGA_NEUT_R')\n\n"
+                txt="${name} = CREA_CHAMP(NOM_CHAM='UT02_ELGA', NUME_ORDRE=1, OPERATION='EXTR', PROL_ZERO='OUI', RESULTAT=${resu}, TYPE_CHAM='ELGA_NEUT_R')\n\n"
                 file.write(Template(txt).substitute(name='FC_'+resultName,resu=resultName))
                 
                 # end of loop on plies
@@ -737,6 +866,7 @@ class CompositeModel(QStandardItemModel):
         
         # post processing for solid regions
         
+        #OLD SOLUTION => does not work when combined solid / shell model... 
         # resMod = MODI_REPERE(AFFE=(_F(ANGL_NAUT=(45.0, 0.0, 0.0),
         #                       GROUP_MA=('ply1', )),
         #                    _F(ANGL_NAUT=(90.0, 0.0, 0.0),
@@ -749,26 +879,28 @@ class CompositeModel(QStandardItemModel):
         #                           TYPE_CHAM='TENS_3D'),
         #              REPERE='UTILISATEUR',
         #              RESULTAT=result)
+        # NEW solution: use custom formula for stress transformation and criteria evaluation
         
-        txt= "resMod = MODI_REPERE(AFFE= $affeList , CARA_ELEM=elemprop, " + \
-                    "MODI_CHAM=_F(NOM_CHAM='SIEF_ELGA',NOM_CMP=('SIXX', 'SIYY', 'SIZZ', 'SIXY', 'SIXZ', 'SIYZ'),TYPE_CHAM='TENS_3D'),\n" + \
-                    "REPERE='UTILISATEUR', RESULTAT= reslin )\n\n"
-        txtLoop="_F(ANGL_NAUT=( $alpha ,  $beta ,  $gamma ), GROUP_MA= $grpList ),\n"
-        lst="("
-        if self.rootSolidPlies.rowCount()>0:
-            for i in range(self.rootSolidPlies.rowCount()):
-                solidPly=self.rootSolidPlies.child(i)
-                grpList=solidPly.groupList
-                orientName=solidPly.orientationName
-                orient=getChildByName(self.rootOrientations, orientName)
-                alpha=orient.angles["alpha"]
-                beta=orient.angles["beta"]
-                gamma=orient.angles["gamma"]
-                lst=lst + Template(txtLoop).substitute(alpha=str(alpha), beta=str(beta), gamma=str(gamma), grpList=str(tuple(grpList)))
-            lst=lst+")"
-            file.write(Template(txt).substitute( affeList=lst ))
+        #txt= "resMod = MODI_REPERE(AFFE= $affeList , CARA_ELEM=elemprop, " + \
+        #            "MODI_CHAM=_F(NOM_CHAM='SIEF_ELGA',NOM_CMP=('SIXX', 'SIYY', 'SIZZ', 'SIXY', 'SIXZ', 'SIYZ'),TYPE_CHAM='TENS_3D'),\n" + \
+        #            "REPERE='UTILISATEUR', RESULTAT= reslin )\n\n"
+        #txtLoop="_F(ANGL_NAUT=( $alpha ,  $beta ,  $gamma ), GROUP_MA= $grpList ),\n"
+        #lst="("
+        #if self.rootSolidPlies.rowCount()>0:
+        #    for i in range(self.rootSolidPlies.rowCount()):
+        #        solidPly=self.rootSolidPlies.child(i)
+        #        grpList=solidPly.groupList
+        #        orientName=solidPly.orientationName
+        #        orient=getChildByName(self.rootOrientations, orientName)
+        #        alpha=orient.angles["alpha"]
+        #        beta=orient.angles["beta"]
+        #        gamma=orient.angles["gamma"]
+        #        lst=lst + Template(txtLoop).substitute(alpha=str(alpha), beta=str(beta), gamma=str(gamma), grpList=str(tuple(grpList)))
+        #    lst=lst+")"
+        #    file.write(Template(txt).substitute( affeList=lst ))
         
         # failure criteria for solid orthotropic or  isotropic materials (Von Mises, principal stresses, Hashin 3D)
+
         qm = QMessageBox()
         ret = qm.question(None,'Detailed Solid output', "Do you want to compute failure criteria for each solid regions?", qm.Yes | qm.No)
         if ret == qm.Yes:
@@ -777,58 +909,99 @@ class CompositeModel(QStandardItemModel):
             doWriteSolids=False
             
         if (self.rootSolidPlies.rowCount()>0) & doWriteSolids:
+         
             for i in range(self.rootSolidPlies.rowCount()):
                 resultName='S'+str(i)
                 solidPly = self.rootSolidPlies.child(i)
                 grpList=solidPly.groupList
                 materialName = solidPly.materialName
+                orientName=solidPly.orientationName
+                orient=getChildByName(self.rootOrientations,orientName)
                 material = getChildByName(self.rootMaterials, materialName)
                 st = material.strengthProperties
+                angl=orient.angles
                 
+                # local stress component S11
+                #S0_SI11 = FORMULE(NOM_PARA=('SIXX', 'SIYY', 'SIZZ', 'SIXY', 'SIXZ', 'SIYZ'),
+                #VALE='SI11(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=alpha, beta=beta,gamma=gamma)', SI11=SI11,alpha=0.0,beta=0.0,gamma=0.0)
+                txt="${name} = FORMULE(NOM_PARA=('SIXX', 'SIYY', 'SIZZ', 'SIXY', 'SIXZ', 'SIYZ'), \n VALE='SI11(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=alpha, beta=beta,gamma=gamma)', SI11=SI11,alpha=$alpha,beta=$beta,gamma=$gamma)\n\n"
+                formulaName=resultName+'_SI11'
+                file.write(Template(txt).substitute(name=formulaName, alpha=angl['alpha'], beta=angl['beta'] , gamma=angl['gamma']))
+                # local stress component S22
+                #S0_SI22 = FORMULE(NOM_PARA=('SIXX', 'SIYY', 'SIZZ', 'SIXY', 'SIXZ', 'SIYZ'),
+                #VALE='SI22(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=alpha, beta=beta,gamma=gamma)', SI22=SI22,alpha=0.0,beta=0.0,gamma=0.0)
+                txt="${name} = FORMULE(NOM_PARA=('SIXX', 'SIYY', 'SIZZ', 'SIXY', 'SIXZ', 'SIYZ'), \n VALE='SI22(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=alpha, beta=beta,gamma=gamma)', SI22=SI22,alpha=$alpha,beta=$beta,gamma=$gamma)\n\n"
+                formulaName=resultName+'_SI22'
+                file.write(Template(txt).substitute(name=formulaName, alpha=angl['alpha'], beta=angl['beta'] , gamma=angl['gamma']))
+                # local stress component S33
+                #S0_SI33 = FORMULE(NOM_PARA=('SIXX', 'SIYY', 'SIZZ', 'SIXY', 'SIXZ', 'SIYZ'),
+                #VALE='SI33(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=alpha, beta=beta,gamma=gamma)', SI33=SI33,alpha=0.0,beta=0.0,gamma=0.0)
+                txt="${name} = FORMULE(NOM_PARA=('SIXX', 'SIYY', 'SIZZ', 'SIXY', 'SIXZ', 'SIYZ'), \n VALE='SI33(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=alpha, beta=beta,gamma=gamma)', SI33=SI33,alpha=$alpha,beta=$beta,gamma=$gamma)\n\n"
+                formulaName=resultName+'_SI33'
+                file.write(Template(txt).substitute(name=formulaName, alpha=angl['alpha'], beta=angl['beta'] , gamma=angl['gamma']))
+                # local stress component S12
+                #S0_SI12 = FORMULE(NOM_PARA=('SIXX', 'SIYY', 'SIZZ', 'SIXY', 'SIXZ', 'SIYZ'),
+                #VALE='SI12(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=alpha, beta=beta,gamma=gamma)', SI12=SI12,alpha=0.0,beta=0.0,gamma=0.0)
+                txt="${name} = FORMULE(NOM_PARA=('SIXX', 'SIYY', 'SIZZ', 'SIXY', 'SIXZ', 'SIYZ'), \n VALE='SI12(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=alpha, beta=beta,gamma=gamma)', SI12=SI12,alpha=$alpha,beta=$beta,gamma=$gamma)\n\n"
+                formulaName=resultName+'_SI12'
+                file.write(Template(txt).substitute(name=formulaName, alpha=angl['alpha'], beta=angl['beta'] , gamma=angl['gamma']))
+                # local stress component S13
+                #S0_SI13 = FORMULE(NOM_PARA=('SIXX', 'SIYY', 'SIZZ', 'SIXY', 'SIXZ', 'SIYZ'),
+                #VALE='SI13(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=alpha, beta=beta,gamma=gamma)', SI13=SI13,alpha=0.0,beta=0.0,gamma=0.0)
+                txt="${name} = FORMULE(NOM_PARA=('SIXX', 'SIYY', 'SIZZ', 'SIXY', 'SIXZ', 'SIYZ'), \n VALE='SI13(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=alpha, beta=beta,gamma=gamma)', SI13=SI13,alpha=$alpha,beta=$beta,gamma=$gamma)\n\n"
+                formulaName=resultName+'_SI13'
+                file.write(Template(txt).substitute(name=formulaName, alpha=angl['alpha'], beta=angl['beta'] , gamma=angl['gamma']))
+                # local stress component S23
+                #S0_SI23 = FORMULE(NOM_PARA=('SIXX', 'SIYY', 'SIZZ', 'SIXY', 'SIXZ', 'SIYZ'),
+                #VALE='SI23(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=alpha, beta=beta,gamma=gamma)', SI23=SI23,alpha=0.0,beta=0.0,gamma=0.0)
+                txt="${name} = FORMULE(NOM_PARA=('SIXX', 'SIYY', 'SIZZ', 'SIXY', 'SIXZ', 'SIYZ'), \n VALE='SI23(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=alpha, beta=beta,gamma=gamma)', SI23=SI23,alpha=$alpha,beta=$beta,gamma=$gamma)\n\n"
+                formulaName=resultName+'_SI23'
+                file.write(Template(txt).substitute(name=formulaName, alpha=angl['alpha'], beta=angl['beta'] , gamma=angl['gamma']))
+                
+
                 # first criterion: fiber tensile , Hashin model 
-                # Crit_FT= (Sigma11/X1t)^2 + (tau12/S12)^2 + (tau13/S13)^2 if S11>0
-                txt="${name} = FORMULE(NOM_PARA=('SIXX', 'SIXY', 'SIXZ' ),VALE=' (SIXX+abs(SIXX))/(2*abs(SIXX)) * sqrt( (SIXX / $X1t )**2 + ( SIXY / $S12 )**2 + ( SIXZ / $S13 )**2 )  ')\n\n"
+                #S0_FT = FORMULE(NOM_PARA=('SIXX', 'SIYY', 'SIZZ', 'SIXY', 'SIXZ', 'SIYZ'),
+                #VALE='FT(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, XT=XT, S12=S12, S13=S13)', FT=FT, XT=1000, S12=100, S13=70)
+                txt="${name} = FORMULE(NOM_PARA=('SIXX', 'SIYY', 'SIZZ', 'SIXY', 'SIXZ', 'SIYZ'),\n VALE='FT(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, XT=XT, S12=S12, S13=S13)', FT=FT, XT=$XT, S12=$S12, S13=$S13)\n\n"
                 formulaName=resultName+'_FT'
-                file.write(Template(txt).substitute(name=formulaName, X1t=st['XT'], S12=st['S12'] , S13=st['S13']))
+                file.write(Template(txt).substitute(name=formulaName, XT=st['XT'], S12=st['S12'] , S13=st['S13']))
                 # 2nd criterion: fiber compression, Hashin model 
-                # Crit_FT= sqrt((Sigma11/X1c)^2 ) if S11<0
-                txt="${name} = FORMULE(NOM_PARA=('SIXX', 'SIXY', 'SIXZ' ),VALE='  (abs(SIXX)-SIXX)/(2*abs(SIXX)) * sqrt( (SIXX / $X1c )**2  )  ')\n\n"
+                #S0_FC = FORMULE(NOM_PARA=('SIXX', 'SIXY', 'SIXZ'), VALE='FC(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, XC=XC)',FC=FC,XC=-600)
+                txt="${name} = FORMULE(NOM_PARA=('SIXX', 'SIYY', 'SIZZ','SIXY', 'SIXZ', 'SIYZ'), VALE='FC(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, XC=XC)',FC=FC,XC=$XC)\n\n"
                 formulaName=resultName+'_FC'
-                file.write(Template(txt).substitute(name=formulaName, X1c=st['XC'] ))
+                file.write(Template(txt).substitute(name=formulaName, XC=st['XC'] ))
                 # 3rd criterion: matrix tensile , Hashin model 
-                # Crit_MT= sqrt( (Sigma11/ (2 * X1t) )^2 + (tau12/S12)^2 + S22^2/(X2t*X2c)  ) if S11>0
-                MTcrit='( (SIYY+SIZZ) / $YT )**2 + (SIYZ**2-SIYY*SIZZ)/( ( $S23 )**2 ) + (SIXY**2 + SIXZ**2)/( ( $S12 )**2 )  '
-                txt="${name} = FORMULE(NOM_PARA=('SIYY', 'SIZZ', 'SIXY', 'SIXZ', 'SIYZ' ),VALE='  " \
-                    + "(abs(SIYY + SIZZ)+(SIYY+SIZZ))/(2*abs(SIYY+SIZZ)) * sqrt( " \
-                    + MTcrit  \
-                    +" ) ')\n\n"
+                # S0_MT = FORMULE(NOM_PARA=('SIXX', 'SIYY', 'SIZZ','SIXY', 'SIXZ', 'SIYZ'),VALE='MT(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, YT=YT,ZT=ZT,S12=S12,S13=S13,S23=S23)',MT=MT,YT=$YT,ZT=$ZT,S12=$S12,S13=$S13,S23=$S23)
+                txt="${name} = FORMULE(NOM_PARA=('SIXX', 'SIYY', 'SIZZ','SIXY', 'SIXZ', 'SIYZ'),VALE='MT(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, YT=YT,ZT=ZT,S12=S12,S13=S13,S23=S23)',MT=MT,YT=$YT,ZT=$ZT,S12=$S12,S13=$S13,S23=$S23) \n\n"
                 formulaName=resultName+'_MT'
-                file.write(Template(txt).substitute(name=formulaName,YT=st['YT'], S12=st['S12'], S23=st['S23']))
+                file.write(Template(txt).substitute(name=formulaName,YT=st['YT'],ZT=st['ZT'], S12=st['S12'], S13=st['S13'], S23=st['S23']))
                 # 4th criterion: matrix compression, Hashin model 
-                # Crit_MC= sqrt( (Sigma11/ (2 * X1t) )^2 + (tau12/S12)^2 + S22^2/(X2t*X2c)  ) if S11<0
-                MCcrit='1.0 / $YC * ( ( $YC / (2.0 * $S23 ) )**2 - 1.0 ) * (SIYY + SIZZ) + ( (SIYY + SIZZ) / (2.0 * $S23 ) )**2 ' + \
-                       '+ (SIYZ**2 - SIYY*SIZZ)/( ( $S23 )**2 ) + (SIXY**2 + SIXZ**2)/( ( $S12 )**2 )'
-                txt="${name} = FORMULE(NOM_PARA=('SIYY', 'SIZZ', 'SIXY', 'SIXZ', 'SIYZ' ),VALE='  " \
-                    +"(abs(SIYY + SIZZ)-(SIYY+SIZZ))/(2.0*abs(SIYY+SIZZ)) * sqrt( abs("  \
-                    + MCcrit \
-                    +")  ) ')\n\n"
+                # S0_MC = FORMULE(NOM_PARA=('SIYY', 'SIZZ', 'SIXY', 'SIXZ', 'SIYZ'), VALE='MC(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, YC=YC,ZC=ZC,S12=S12,S13=S13,S23=S23)',MC=MC,YC=-120,ZC=-120,S12=45,S13=45,S23=35)
+
+                txt="${name} = FORMULE(NOM_PARA=('SIYY', 'SIZZ', 'SIXY', 'SIXZ', 'SIYZ'), VALE='MC(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, YC=YC,ZC=ZC,S12=S12,S13=S13,S23=S23)',MC=MC,YC=$YC,ZC=$ZC,S12=$S12,S13=$S13,S23=$S23) \n\n"
                 formulaName=resultName+'_MC'
-                file.write(Template(txt).substitute(name=formulaName, YC=abs(st['YC']), S23=st['S23'], S12=st['S12'] ))
+                file.write(Template(txt).substitute(name=formulaName, YC=abs(st['YC']),ZC=abs(st['ZC']), S23=st['S23'], S12=st['S12'], S13=st['S13']))
                 # compute fields
-                txt="${name} = CALC_CHAMP( GROUP_MA= $grpList , CONTRAINTE=( 'SIGM_NOEU','SIGM_ELNO', ), CRITERES=('SIEQ_ELGA', ), CHAM_UTIL=_F(FORMULE=(${ft}, ${fc}, ${mt}, ${mc}), NOM_CHAM='SIEF_ELGA', NUME_CHAM_RESU=1), RESULTAT=${inpname})\n\n"
-                file.write( Template(txt).substitute(name=resultName, ft=resultName+'_FT', fc=resultName+'_FC', \
-                                                    mt=resultName+'_MT', mc=resultName+'_MC' , inpname='resMod', \
+                txt="#COMPUTE POST PRO DATA FOR SOLID REGION S0, USER DEFINED FIELD UT_01, COMPONENTS: X1..X6=local stress SI11..SI23, X7..X10=FT,FC,MT,MC criteria \n" 
+                txt+="${name} = CALC_CHAMP(CHAM_UTIL=_F(FORMULE=($SI11,$SI22, $SI33, $SI12, $SI13, $SI23, $FT, $FC, $MT, $MC),\n"
+                txt+="        NOM_CHAM='SIEF_ELGA', \n NUME_CHAM_RESU=1), CONTRAINTE=('SIGM_NOEU', 'SIGM_ELNO'), CRITERES=('SIEQ_ELGA', ), \n "
+                txt+="        GROUP_MA=$grpList, RESULTAT=$inpname)\n \n" 
+                #${name} = CALC_CHAMP( GROUP_MA= $grpList , CONTRAINTE=( 'SIGM_NOEU','SIGM_ELNO', ), CRITERES=('SIEQ_ELGA', ), CHAM_UTIL=_F(FORMULE=(${ft}, ${fc}, ${mt}, ${mc}), NOM_CHAM='SIEF_ELGA', NUME_CHAM_RESU=1), RESULTAT=${inpname})\n\n"
+                file.write( Template(txt).substitute(SI11=resultName+'_SI11', SI22=resultName+'_SI22', SI33=resultName+'_SI33' , \
+                                                     SI12=resultName+'_SI12', SI13=resultName+'_SI13', SI23=resultName+'_SI23' , \
+                                                     name=resultName, FT=resultName+'_FT', FC=resultName+'_FC', \
+                                                    MT=resultName+'_MT', MC=resultName+'_MC' , inpname='reslin', \
                                                     grpList=str(tuple(grpList))  ) )
             # end loop on aolid regions
             # now save results
-            txt="IMPR_RESU(RESU=  $affeList  ,UNITE=84)\n\n"
-            txtLoop= "_F(RESULTAT= $name , GROUP_MA= $groupList ), \n"
+            txt="IMPR_RESU(RESU=  $affeList  ,UNITE=84)\n"
+            txtLoop= "    _F(RESULTAT= $name , GROUP_MA= $groupList ), \n"
             lst="("
             for i in range(self.rootSolidPlies.rowCount()):
                 solidPly = self.rootSolidPlies.child(i)
                 grpList=solidPly.groupList
                 lst=lst+Template(txtLoop).substitute(name="S"+str(i), groupList=grpList)
-            lst = lst + ' _F(RESULTAT=resMod,), \n'
+            lst = lst + ' _F(RESULTAT=reslin,), \n'
             lst=lst+")"
             file.write(Template(txt).substitute(affeList=lst))
                 
