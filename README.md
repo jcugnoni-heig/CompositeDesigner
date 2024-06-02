@@ -3,7 +3,7 @@ Composite designer plugin for Salome-Meca / Code-Aster
 
 Development: Joël Cugnoni, HEIG-VD
 
-License: GPL v3
+License: GPL v2
 (contact author for other options)
 
 # Installation
