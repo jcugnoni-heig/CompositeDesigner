@@ -1,6 +1,11 @@
 # CompositeDesigner
 Composite designer plugin for Salome-Meca / Code-Aster
 
+Development: Joël Cugnoni, HEIG-VD
+
+License: GPL v3
+(contact author for other options)
+
 # Installation
 To install the code, place the files in your Salome-Meca plugin directory, which is typically located the /home/yourusername/.config/salome/Plugins. If the Plugins folder does not exist, just create it. For Windows, the same rule applies , put these files for example in c:\users\yourusername\.config\salome\Plugins.
 
