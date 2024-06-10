@@ -69,7 +69,7 @@ Composite Designer plugin is a simple GUI structured around a model tree (materi
     - Unit 81: output, model "concepts" output, specify a output ".med" file name i.e "Concepts.med", contains the shell thickness, local coord systems, material assignment.
     'Post processing stage'
     - Unit 2: output, layer by layer failure criteria & local stresses (shells), specify output med file name ie "FailPly.med"
-    - Unit 4: output, global failure criteria (max across layers, shells), specify output med file name ie "FailMax.med"
+    - Unit 3: output, global failure criteria (max across layers, shells), specify output med file name ie "FailMax.med"
     - Unit 84: output, solid regions failure criteria & local stresses, specify output med file name ie "Fail3D.med"
 15. Save the study, and run the simulation
 14. Post process the results by loading the resul med files in Paraviz. see post processing doc for the definition / naming of the fields. Also, many fields are computed at integration point of the elements (ELGA fields, at Gauss points). Those fields can be visualized using one of the following filters in Paraviz: Mechanics-> ELGA field to surface or to surface (avg by element) or ELGA to Point Gaussian (and choose Point Gaussian as visualization mode)
