@@ -62,7 +62,15 @@ Composite Designer plugin is a simple GUI structured around a model tree (materi
 10. Right click on Simulation and save Composite Design to a json file (to be able to reload later). Right click again and save Code-Aster model and post pro command files (.comm).
 11. in AsterStudy, create a new study, import the model .comm file as first stage (graphical) and import the post pro .comm file as second stage (import stage as text).
 12. edit the load case (at least) in AFFE_CHAR_MECA. Optionnally you may neef to add surface elements groups for distributed loading on solid regions in AFFE_MODELE , under the '3D' modeling assignment list (surface regions of 3D elements need to be assigned a 3D modeling to define distributed loading).
-13. Assign files to the following units (TODO, see example in zip file for the moment).
-14. Save the study, and run the simulation
+13. Assign files to the following units ( see example in zip file for the moment)
+    ' Model / initial solution stage: '
+    - Unit 20: input , either the Salome Mesh object or an external mesh in MED format
+    - Unit 80: output, global solution output, specify a output med file name ie "GlobalRes.med", contains the displacement fields and other global outputs if requested.
+    - Unit 81: output, model "concepts" output, specify a output ".med" file name i.e "Concepts.med", contains the shell thickness, local coord systems, material assignment.
+    'Post processing stage'
+    - Unit 2: output, layer by layer failure criteria & local stresses (shells), specify output med file name ie "FailPly.med"
+    - Unit 4: output, global failure criteria (max across layers, shells), specify output med file name ie "FailMax.med"
+    - Unit 84: output, solid regions failure criteria & local stresses, specify output med file name ie "Fail3D.med"
+15. Save the study, and run the simulation
 14. Post process the results by loading the resul med files in Paraviz. see post processing doc for the definition / naming of the fields. Also, many fields are computed at integration point of the elements (ELGA fields, at Gauss points). Those fields can be visualized using one of the following filters in Paraviz: Mechanics-> ELGA field to surface or to surface (avg by element) or ELGA to Point Gaussian (and choose Point Gaussian as visualization mode)
  
