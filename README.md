@@ -73,4 +73,9 @@ Composite Designer plugin is a simple GUI structured around a model tree (materi
     - Unit 84: output, solid regions failure criteria & local stresses, specify output med file name ie "Fail3D.med"
 15. Save the study, and run the simulation
 14. Post process the results by loading the resul med files in Paraviz. see post processing doc for the definition / naming of the fields. Also, many fields are computed at integration point of the elements (ELGA fields, at Gauss points). Those fields can be visualized using one of the following filters in Paraviz: Mechanics-> ELGA field to surface or to surface (avg by element) or ELGA to Point Gaussian (and choose Point Gaussian as visualization mode)
- 
+
+## Example files:
+
+- *Simple Sandwich plate with multilayer shell faces and solid core*: simple 3D model built in Salome Meca 2021, see files in example_tstComp1_SM2021.zip
+- *L-Beam / Corner structure with multiple regions, thin sandwich modeled as multilayer composite shell*: also include the geometry preparation from 3D to mid surface (offset) in Salome-Meca 2021;  see example_ShellCompositeDesign1.zip  
+
