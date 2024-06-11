@@ -77,5 +77,6 @@ Composite Designer plugin is a simple GUI structured around a model tree (materi
 ## Example files:
 
 - *Simple Sandwich plate with multilayer shell faces and solid core*: simple 3D model built in Salome Meca 2021, see files in example_tstComp1_SM2021.zip
-- *L-Beam / Corner structure with multiple regions, thin sandwich modeled as multilayer composite shell*: also include the geometry preparation from 3D to mid surface (offset) in Salome-Meca 2021;  see example_ShellCompositeDesign1.zip  
+- *L-Beam / Corner structure with multiple regions, thin sandwich modeled as multilayer composite shell*: also include the geometry preparation from 3D to mid surface (offset) in Salome-Meca 2021;  see example_ShellCompositeDesign1.zip
+- *L-Beam / corner structure with multiple region, modeled as mixed 3D / multilayer shell*: see LBeam3D.zip for example files 
 
