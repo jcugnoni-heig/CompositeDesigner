@@ -524,13 +524,13 @@ import numpy as np
 # PYTHON FUNCTIONS
 def rotmatrix(alpha,beta,gamma):
     # Rotation matrix defined by yaw = alpha, pitch = beta, roll = gamma in degrees wrt global coord system
-    
+    #  transformation from global to local cs: rotation order Z => Y => X, with opposite angles
     # Rotation matrices
-    alpha=alpha/180.0*np.pi
+    alpha= - alpha/180.0*np.pi
     
     beta = beta/180.0*np.pi
     
-    gamma=gamma/180.0*np.pi
+    gamma= - gamma/180.0*np.pi
     
     # Rotation matrices
     R_z = np.array([
@@ -611,19 +611,38 @@ def SI23(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=0,beta=0,gamma=0):
 def FT(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=0,beta=0,gamma=0,XT=1,S12=1,S13=1):
     #compute local failure criterion FT in solid region 
     SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ = transform_stress(SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ, alpha, beta, gamma)
-    FT=(SIXX+abs(SIXX))/(2*abs(SIXX)) * sqrt( (SIXX / XT )**2 + ( SIXY / S12 )**2 + ( SIXZ / S13 )**2 ) 
+    try:
+       if(SIXX>0.0):
+           FT = sqrt( (SIXX / XT )**2 + ( SIXY / S12 )**2 + ( SIXZ / S13 )**2 ) 
+       else: 
+           FT = 0.0
+    except:
+       FT = -1.0
     return FT
    
 def FC(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=0,beta=0,gamma=0, XC=1):
     #compute local failure criterion FC in solid region 
     SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ = transform_stress(SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ, alpha, beta, gamma)
-    FC=(abs(SIXX)-SIXX)/(2*abs(SIXX)) * sqrt( (SIXX / XC )**2  )  
+    try:
+        if(SIXX<0.0):
+            FC = sqrt( (SIXX / XC )**2  )  
+        else:
+            FC = 0.0
+    except:
+        FC = -1.0
     return FC
 
 def MT(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=0,beta=0,gamma=0, YT=1, ZT=1, S12=1, S13=1, S23=1 ):
     #compute local failure criterion MT in solid region 
     SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ = transform_stress(SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ, alpha, beta, gamma)
-    MT=(abs(SIYY + SIZZ)+(SIYY+SIZZ))/(2*abs(SIYY+SIZZ)) * sqrt( ( (SIYY+SIZZ) / (0.5*(YT+ZT)) )**2 + (SIYZ**2-SIYY*SIZZ)/( ( S23 )**2 ) + (SIXY**2 + SIXZ**2)/ ( (0.5 * (S12+S13) )**2 )   )  
+    try:
+        Crit=( (SIYY+SIZZ) / (0.5*(YT+ZT)) )**2 + (SIYZ**2-SIYY*SIZZ)/( ( S23 )**2 ) + (SIXY**2 + SIXZ**2)/ ( (0.5 * (S12+S13) )**2 )
+        if((SIYY+SIZZ)>0.0):
+            MT = sqrt(abs(Crit))  
+        else:
+            MT = 0.0
+    except:
+        MT=-1.0
     return MT
 
 def MC(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=0,beta=0,gamma=0, YC=1, ZC=1, S12=1, S13=1, S23=1):
@@ -631,12 +650,14 @@ def MC(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=0,beta=0,gamma=0, YC=1, ZC=1, S
     SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ = transform_stress(SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ, alpha, beta, gamma)
     try:
         ST=SIYY + SIZZ
-        negValue=(abs(ST)-(ST))/(2.0*abs(ST))
-        YZC=(0.5*(YC+ZC))
-        F1=abs(1.0 / YZC  * ( ( YZC / (2.0 * S23 ) )**2 - 1.0 ))
-        S1X= 0.5 * (S12+S13)
-        Crit=F1 * ST + ( ST / (2.0 * S23 ) )**2 + (SIYZ**2 - SIYY*SIZZ)/( ( S23 )**2 ) + (SIXY**2 + SIXZ**2)/( ( S1X )**2 )
-        MC=sqrt( abs(negValue * Crit) )
+        if(ST<=0.0): 
+            YZC=(0.5*(YC+ZC))
+            F1=abs(1.0 / YZC  * ( ( YZC / (2.0 * S23 ) )**2 - 1.0 ))
+            S1X= 0.5 * (S12+S13)
+            Crit=F1 * ST + ( ST / (2.0 * S23 ) )**2 + (SIYZ**2 - SIYY*SIZZ)/( ( S23 )**2 ) + (SIXY**2 + SIXZ**2)/( ( S1X )**2 )
+            MC=sqrt( abs(Crit) )
+        else: 
+            MC=0.0
     except:
         MC=-1.0
     return MC
@@ -962,25 +983,25 @@ def MC(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=0,beta=0,gamma=0, YC=1, ZC=1, S
                 # first criterion: fiber tensile , Hashin model 
                 #S0_FT = FORMULE(NOM_PARA=('SIXX', 'SIYY', 'SIZZ', 'SIXY', 'SIXZ', 'SIYZ'),
                 #VALE='FT(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, XT=XT, S12=S12, S13=S13)', FT=FT, XT=1000, S12=100, S13=70)
-                txt="${name} = FORMULE(NOM_PARA=('SIXX', 'SIYY', 'SIZZ', 'SIXY', 'SIXZ', 'SIYZ'),\n VALE='FT(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, XT=XT, S12=S12, S13=S13)', FT=FT, XT=$XT, S12=$S12, S13=$S13)\n\n"
+                txt="${name} = FORMULE(NOM_PARA=('SIXX', 'SIYY', 'SIZZ', 'SIXY', 'SIXZ', 'SIYZ'),\n VALE='FT(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, XT=XT, S12=S12, S13=S13, alpha=alpha, beta=beta,gamma=gamma)', FT=FT, alpha=$alpha,beta=$beta,gamma=$gamma, XT=$XT, S12=$S12, S13=$S13)\n\n"
                 formulaName=resultName+'_FT'
-                file.write(Template(txt).substitute(name=formulaName, XT=st['XT'], S12=st['S12'] , S13=st['S13']))
+                file.write(Template(txt).substitute(name=formulaName, XT=st['XT'], S12=st['S12'] , S13=st['S13'], alpha=angl['alpha'], beta=angl['beta'] , gamma=angl['gamma']))
                 # 2nd criterion: fiber compression, Hashin model 
                 #S0_FC = FORMULE(NOM_PARA=('SIXX', 'SIXY', 'SIXZ'), VALE='FC(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, XC=XC)',FC=FC,XC=-600)
-                txt="${name} = FORMULE(NOM_PARA=('SIXX', 'SIYY', 'SIZZ','SIXY', 'SIXZ', 'SIYZ'), VALE='FC(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, XC=XC)',FC=FC,XC=$XC)\n\n"
+                txt="${name} = FORMULE(NOM_PARA=('SIXX', 'SIYY', 'SIZZ','SIXY', 'SIXZ', 'SIYZ'), VALE='FC(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, XC=XC, alpha=alpha, beta=beta,gamma=gamma)',FC=FC,XC=$XC, alpha=$alpha, beta=$beta, gamma=$gamma )\n\n"
                 formulaName=resultName+'_FC'
-                file.write(Template(txt).substitute(name=formulaName, XC=st['XC'] ))
+                file.write(Template(txt).substitute(name=formulaName, XC=st['XC'] , alpha=angl['alpha'], beta=angl['beta'] , gamma=angl['gamma']))
                 # 3rd criterion: matrix tensile , Hashin model 
                 # S0_MT = FORMULE(NOM_PARA=('SIXX', 'SIYY', 'SIZZ','SIXY', 'SIXZ', 'SIYZ'),VALE='MT(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, YT=YT,ZT=ZT,S12=S12,S13=S13,S23=S23)',MT=MT,YT=$YT,ZT=$ZT,S12=$S12,S13=$S13,S23=$S23)
-                txt="${name} = FORMULE(NOM_PARA=('SIXX', 'SIYY', 'SIZZ','SIXY', 'SIXZ', 'SIYZ'),VALE='MT(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, YT=YT,ZT=ZT,S12=S12,S13=S13,S23=S23)',MT=MT,YT=$YT,ZT=$ZT,S12=$S12,S13=$S13,S23=$S23) \n\n"
+                txt="${name} = FORMULE(NOM_PARA=('SIXX', 'SIYY', 'SIZZ','SIXY', 'SIXZ', 'SIYZ'),VALE='MT(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, YT=YT,ZT=ZT,S12=S12,S13=S13,S23=S23, alpha=alpha, beta=beta,gamma=gamma)',alpha=$alpha, beta=$beta, gamma=$gamma,MT=MT,YT=$YT,ZT=$ZT,S12=$S12,S13=$S13,S23=$S23) \n\n"
                 formulaName=resultName+'_MT'
-                file.write(Template(txt).substitute(name=formulaName,YT=st['YT'],ZT=st['ZT'], S12=st['S12'], S13=st['S13'], S23=st['S23']))
+                file.write(Template(txt).substitute(name=formulaName,YT=st['YT'],ZT=st['ZT'], S12=st['S12'], S13=st['S13'], S23=st['S23'], alpha=angl['alpha'], beta=angl['beta'] , gamma=angl['gamma']))
                 # 4th criterion: matrix compression, Hashin model 
                 # S0_MC = FORMULE(NOM_PARA=('SIYY', 'SIZZ', 'SIXY', 'SIXZ', 'SIYZ'), VALE='MC(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, YC=YC,ZC=ZC,S12=S12,S13=S13,S23=S23)',MC=MC,YC=-120,ZC=-120,S12=45,S13=45,S23=35)
 
-                txt="${name} = FORMULE(NOM_PARA=('SIYY', 'SIZZ', 'SIXY', 'SIXZ', 'SIYZ'), VALE='MC(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, YC=YC,ZC=ZC,S12=S12,S13=S13,S23=S23)',MC=MC,YC=$YC,ZC=$ZC,S12=$S12,S13=$S13,S23=$S23) \n\n"
+                txt="${name} = FORMULE(NOM_PARA=('SIYY', 'SIZZ', 'SIXY', 'SIXZ', 'SIYZ'), VALE='MC(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, YC=YC,ZC=ZC,S12=S12,S13=S13,S23=S23,alpha=alpha, beta=beta,gamma=gamma)',alpha=$alpha,beta=$beta,gamma=$gamma,MC=MC,YC=$YC,ZC=$ZC,S12=$S12,S13=$S13,S23=$S23) \n\n"
                 formulaName=resultName+'_MC'
-                file.write(Template(txt).substitute(name=formulaName, YC=abs(st['YC']),ZC=abs(st['ZC']), S23=st['S23'], S12=st['S12'], S13=st['S13']))
+                file.write(Template(txt).substitute(name=formulaName, YC=abs(st['YC']),ZC=abs(st['ZC']), S23=st['S23'], S12=st['S12'], S13=st['S13'] , alpha=angl['alpha'], beta=angl['beta'] , gamma=angl['gamma']))
                 # compute fields
                 txt="#COMPUTE POST PRO DATA FOR SOLID REGION S0, USER DEFINED FIELD UT_01, COMPONENTS: X1..X6=local stress SI11..SI23, X7..X10=FT,FC,MT,MC criteria \n" 
                 txt+="${name} = CALC_CHAMP(CHAM_UTIL=_F(FORMULE=($SI11,$SI22, $SI33, $SI12, $SI13, $SI23, $FT, $FC, $MT, $MC),\n"
@@ -1215,15 +1236,19 @@ class OrientationItem(QStandardItem):
         vx=[1.0,0.0,0.0]
         vy=[0.0,1.0,0.0]
         vz=[0.0,0.0,1.0]
-        # nautical angles (see Code-Aster doc for AFFE_CARA_ELEM for example) X-Y-Z
+        # nautical angles (see Code-Aster doc for AFFE_CARA_ELEM) intrinsic rotations Z->Y->X
+        # NOTE: TRANSFORMATION ORDER APPLIED IN REVERSE TO compute local CS expressed in global coordinate
+        # see testRotation.py script for testing
         M=RotX(gamma)
         vx=prodMatVect(M,vx)
         vy=prodMatVect(M,vy)
         vz=prodMatVect(M,vz)
+        
         M=RotY(-beta)
         vx=prodMatVect(M,vx)
         vy=prodMatVect(M,vy)
         vz=prodMatVect(M,vz)
+    
         M=RotZ(alpha)
         vx=prodMatVect(M,vx)
         vy=prodMatVect(M,vy)
@@ -1238,25 +1263,57 @@ class OrientationItem(QStandardItem):
         alpha=0.0
         beta=0.0
         gamma=0.0
-        # first make sure Vx is perpendicular to Vnorm and unit length
-        vx=diffVect(vref, multVect( dot(vref,vz) , vz) )
-        vx=multVect( 1.0 / norm(vx) , vx)
+        # first make sure Vz is perpendicular to Vref and unit length
+        vx=multVect( 1.0 / norm(vref) , vref)
+        vz=multVect( 1.0 / norm(vz) , vz)
+        
+        
+        #vx=diffVect(vref, multVect( dot(vref,vz) , vz) )
+        #vx=multVect( 1.0 / norm(vx) , vx)
+        #vz=multVect( 1.0 / norm(vz) , vz)
+        #vy=cross(vz, vx)
+        
+        vz=diffVect(vz, multVect( dot(vx,vz) , vx) )
         vz=multVect( 1.0 / norm(vz) , vz)
         vy=cross(vz, vx)
+        
+        
         # eqs from https://www.code-aster.org/V2/doc/v14/fr/man_u/u4/u4.74.01.pdf
-        if abs(vx[0])<1e-14:
-            alpha=0.0
-        else:
-            alpha=atan(vx[1]/vx[0])
-        normxy=sqrt(vx[0]**2+vx[1]**2)
-        if normxy<1e-14:
-            beta=0.0
-        else:
-            beta = -atan(vx[2]/normxy)
-        if abs(vy[1])<1e-14:
-            gamma=0.0
-        else:
-            gamma=atan(vy[2]/vy[1])
+        # BUT ADAPTED BECAUSE THERE SEEM TO BE BUGS..... 
+        # (if VX[0]=0, alpha=0 should be changed to alpha = +/-pi/2)
+        # also if normxy=0 then beta should be pi/2 or -pi/2
+        
+        # if abs(vx[0])<1e-14:
+        #     if vx[1]>0.0:
+        #         alpha=pi/2.0
+        #     else:
+        #         alpha=-pi/2.0
+        # else:
+        #     if vx[0]>0.0:
+        #         alpha=atan(vx[1]/vx[0])
+        #     else:
+        #         alpha=pi-atan(-vx[1]/vx[0])
+        # normxy=sqrt(vx[0]**2+vx[1]**2)
+        # if normxy<1e-14:
+        #     if vx[2]>0.0 : 
+        #         beta=pi/2.0
+        #     else:
+        #         beta=-pi/2.0
+        # else:
+        #     beta = atan(vx[2]/normxy)
+        # if abs(vy[1])<1e-14:
+        #     gamma=0.0
+        # else:
+        #     gamma=atan(vy[2]/vy[1])
+        
+        ## better option: use atan2 to get proper angles in 4 quadrands, including limit cases (denonminator =0)
+        # formula from here: https://web.archive.org/web/20220428033032/http://planning.cs.uiuc.edu/node103.html
+        # or also: https://www.youtube.com/watch?v=wg9bI8-Qx2Q
+        alpha=atan2(vx[1],vx[0])
+        beta=atan2(vx[2], sqrt( vy[2]**2 + vz[2]**2) )
+        gamma=atan2(vy[2] , vz[2])
+        
+    
         self.angles['alpha']=alpha*180/pi
         self.angles['beta']=beta*180/pi
         self.angles['gamma']=gamma*180/pi
