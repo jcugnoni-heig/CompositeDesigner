@@ -636,7 +636,7 @@ def MT(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=0,beta=0,gamma=0, YT=1, ZT=1, S
     #compute local failure criterion MT in solid region 
     SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ = transform_stress(SIXX,SIYY,SIZZ,SIXY,SIXZ,SIYZ, alpha, beta, gamma)
     try:
-        Crit=( (SIYY+SIZZ) / (0.5*(YT+ZT)) )**2 + (SIYZ**2-SIYY*SIZZ)/( ( S23 )**2 ) + (SIXY**2 + SIXZ**2)/ ( (0.5 * (S12+S13) )**2 )
+        Crit=( (SIYY+SIZZ) / (0.5*(YT+ZT)) )**2 + abs(SIYZ**2-SIYY*SIZZ)/( ( S23 )**2 ) + (SIXY**2 + SIXZ**2)/ ( (0.5 * (S12+S13) )**2 )
         if((SIYY+SIZZ)>0.0):
             MT = sqrt(abs(Crit))  
         else:
@@ -654,7 +654,7 @@ def MC(SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, alpha=0,beta=0,gamma=0, YC=1, ZC=1, S
             YZC=(0.5*(YC+ZC))
             F1=abs(1.0 / YZC  * ( ( YZC / (2.0 * S23 ) )**2 - 1.0 ))
             S1X= 0.5 * (S12+S13)
-            Crit=F1 * ST + ( ST / (2.0 * S23 ) )**2 + (SIYZ**2 - SIYY*SIZZ)/( ( S23 )**2 ) + (SIXY**2 + SIXZ**2)/( ( S1X )**2 )
+            Crit=F1 * ST + ( ST / (2.0 * S23 ) )**2 + abs(SIYZ**2 - SIYY*SIZZ)/( ( S23 )**2 ) + (SIXY**2 + SIXZ**2)/( ( S1X )**2 )
             MC=sqrt( abs(Crit) )
         else: 
             MC=0.0
